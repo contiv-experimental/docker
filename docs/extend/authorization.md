@@ -18,7 +18,9 @@ same is true for callers using Docker's remote API to contact the daemon. If you
 require greater access control, you can create authorization plugins and add
 them to your Docker daemon configuration. Using an authorization plugin, a
 Docker administrator can configure granular access policies for managing access
-to Docker daemon.
+to Docker daemon. Additionally, an authorization plugin may also return policies
+associated with the container to provide a managed environment for container execution.
+These policies are enforced by the Docker daemon and/or supporting drivers.
 
 Anyone with the appropriate skills can develop an authorization plugin. These
 skills, at their most basic, are knowledge of Docker, understanding of REST, and
@@ -39,7 +41,10 @@ need to restart the Docker daemon to add a new plugin.
 An authorization plugin approves or denies requests to the Docker daemon based
 on both the current authentication context and the command context. The
 authentication context contains all user details and the authentication method.
-The command context contains all the relevant request data.
+The command context contains all the relevant request data. When a request is approved
+the authorization plugin optionally returns a set of associated policies for container
+execution. These policies are expected to be enforced by the docker daemon or
+the supporting drivers.
 
 Authorization plugins must follow the rules described in [Docker Plugin API](plugin_api.md).
 Each plugin must reside within directories described under the
@@ -162,6 +167,7 @@ should implement the following two methods:
     "Allow": "Determined whether the user is allowed or not",
     "Msg":   "The authorization message",
     "Err":   "The error message if things go wrong"
+    "Policies" : "The policies associated with the allowed request."
 }
 ```
 #### /AuthzPlugin.AuthZRes
@@ -190,9 +196,6 @@ should implement the following two methods:
    "Allow":              "Determined whether the user is allowed or not",
    "Msg":                "The authorization message",
    "Err":                "The error message if things go wrong",
-   "ModifiedBody":       "Byte array containing a modified body of the raw HTTP body (or nil if no changes required)",
-   "ModifiedHeader":     "Byte array containing a modified header of the HTTP response (or nil if no changes required)",
-   "ModifiedStatusCode": "int containing the modified version of the status code (or 0 if not change is required)"
 }
 ```
 

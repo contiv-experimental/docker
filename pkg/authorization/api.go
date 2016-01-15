@@ -1,5 +1,7 @@
 package authorization
 
+import "github.com/docker/engine-api/types/container"
+
 const (
 	// AuthZApiRequest is the url for daemon request authorization
 	AuthZApiRequest = "AuthZPlugin.AuthZReq"
@@ -39,6 +41,9 @@ type Request struct {
 
 	// ResponseHeaders stores the response headers sent to the docker daemon
 	ResponseHeaders map[string]string `json:"ResponseHeaders,omitempty"`
+
+	// Policies stores a list of policies associated/identified with given request till this point
+	Policies map[container.PolicyType]string `json:"Policies,omitempty"`
 }
 
 // Response represents authZ plugin response
@@ -51,4 +56,7 @@ type Response struct {
 
 	// Err stores a message in case there's an error
 	Err string `json:"Err,omitempty"`
+
+	// Policies stores a list of policies associated with the authorized request
+	Policies map[container.PolicyType]string `json:"Policies,omitempty"`
 }

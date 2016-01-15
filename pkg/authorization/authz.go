@@ -10,6 +10,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/ioutils"
+	"github.com/docker/engine-api/types/container"
 )
 
 const maxBodySize = 1048576 // 1MB
@@ -74,6 +75,7 @@ func (ctx *Ctx) AuthZRequest(w http.ResponseWriter, r *http.Request) error {
 		RequestURI:      ctx.requestURI,
 		RequestBody:     body,
 		RequestHeaders:  headers(r.Header),
+		Policies:        make(map[container.PolicyType]string),
 	}
 
 	for _, plugin := range ctx.plugins {
@@ -86,6 +88,15 @@ func (ctx *Ctx) AuthZRequest(w http.ResponseWriter, r *http.Request) error {
 
 		if !authRes.Allow {
 			return fmt.Errorf("authorization denied by plugin %s: %s", plugin.Name(), authRes.Msg)
+		} else {
+			// store the policies returned by authz plugin.
+			for k, v := range authRes.Policies {
+				if !k.IsValidType() {
+					logrus.Infof("authz plugin returned an invalid policy type: %d", k)
+					continue
+				}
+				ctx.authReq.Policies[k] = v
+			}
 		}
 	}
 
@@ -117,6 +128,11 @@ func (ctx *Ctx) AuthZResponse(rm ResponseModifier, r *http.Request) error {
 	rm.FlushAll()
 
 	return nil
+}
+
+// Policies returns the policies associated with the authz context for a request
+func (ctx *Ctx) Policies() map[container.PolicyType]string {
+	return ctx.authReq.Policies
 }
 
 // drainBody dump the body (if it's length is less than 1MB) without modifying the request state
