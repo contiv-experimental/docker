@@ -43,7 +43,7 @@ type Request struct {
 	ResponseHeaders map[string]string `json:"ResponseHeaders,omitempty"`
 
 	// Policies stores a list of policies associated/identified with given request till this point
-	Policies map[container.PolicyType]string `json:"Policies,omitempty"`
+	Policies []container.Policy `json:"Policies,omitempty"`
 }
 
 // Response represents authZ plugin response
@@ -58,5 +58,5 @@ type Response struct {
 	Err string `json:"Err,omitempty"`
 
 	// Policies stores a list of policies associated with the authorized request
-	Policies map[container.PolicyType]string `json:"Policies,omitempty"`
+	Policies []container.Policy `json:"Policies,omitempty"`
 }

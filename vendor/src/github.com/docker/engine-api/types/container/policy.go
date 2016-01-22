@@ -5,88 +5,63 @@ import (
 	"fmt"
 )
 
-type PolicyType int
-
-type PolicyMap map[PolicyType]string
-
-const (
-	NetworkFireWallPolicy PolicyType = iota
-	NetworkPriorityPolicy
-	NetworkBandwidthPolicy
-	NetworkLoadbalancePolicy
-	StorageRatelimitPolicy
-	StorageSnapshotPolicy
-)
-
-var AllowedPolicyTypes = map[PolicyType]string{
-	NetworkFireWallPolicy:    "network-firewall-policy",
-	NetworkPriorityPolicy:    "network-priority-policy",
-	NetworkBandwidthPolicy:   "network-bandwidth-policy",
-	NetworkLoadbalancePolicy: "network-loadbalance-policy",
-	StorageRatelimitPolicy:   "storage-ratelimit-policy",
-	StorageSnapshotPolicy:    "storage-snapshot-policy",
+// PolicyAttribute defines the value of granular policy construct identified
+// by Type. Network bandwidth, quality of service are a few examples of network
+// policy attributes
+type PolicyAttribute interface {
+	json.Marshaler
+	json.Unmarshaler
+	Type() string
 }
 
-var AllowedPolicyStrings = map[string]PolicyType{
-	"network-firewall-policy":    NetworkFireWallPolicy,
-	"network-priority-policy":    NetworkPriorityPolicy,
-	"network-bandwidth-policy":   NetworkBandwidthPolicy,
-	"network-loadbalance-policy": NetworkLoadbalancePolicy,
-	"storage-ratelimit-policy":   StorageRatelimitPolicy,
-	"storage-snapshot-policy":    StorageSnapshotPolicy,
+// Policy is a collection policy attributes associated with a category like
+// network or storage. The CategoryInstance is the identifier for a single instance
+// of the Category for the which policy attributes are meant. For instace, for a
+// network policy this will be the name of the network to which the policy applies.
+type Policy struct {
+	Category         string            `json:"category"`
+	CategoryInstance string            `json:"category_instance"`
+	Attributes       []PolicyAttribute `json:"attributes"`
 }
 
-func (pt PolicyType) IsValidType() bool {
-	_, ok := AllowedPolicyTypes[pt]
-	return ok
-}
+func (p *Policy) UnmarshalJSON(in []byte) error {
+	val := struct {
+		Category         string `json:"category"`
+		CategoryInstance string `json:"category_instance"`
+		Attributes       []struct {
+			Type string      `json:"type"`
+			Data interface{} `json:"data"`
+		} `json:"attributes"`
+	}{}
 
-func (pt PolicyType) String() string {
-	str, ok := AllowedPolicyTypes[pt]
-	if !ok {
-		return "undefined"
-	}
-	return str
-}
-
-func (pt PolicyType) MarshalJSON() ([]byte, error) {
-	if !pt.IsValidType() {
-		return nil, fmt.Errorf("unsupported policy type: %d", pt)
-	}
-	return json.Marshal(pt.String())
-}
-
-func (pt PolicyType) UnmarshalJSON(in []byte) error {
-	v, ok := AllowedPolicyStrings[string(in)]
-	if !ok {
-		return fmt.Errorf("unsupported policy string: %q", in)
-	}
-	pt = v
-	return nil
-}
-
-func (pm PolicyMap) MarshalJSON() ([]byte, error) {
-	m := make(map[string]string)
-	for k, v := range pm {
-		if !k.IsValidType() {
-			return nil, fmt.Errorf("unsupported policy type: %d", k)
-		}
-		m[k.String()] = v
-	}
-	return json.Marshal(m)
-}
-
-func (pm PolicyMap) UnmarshalJSON(in []byte) error {
-	m := make(map[string]string)
-	if err := json.Unmarshal(in, &m); err != nil {
+	if err := json.Unmarshal(in, &val); err != nil {
 		return err
 	}
-	for k, v := range m {
-		pt, ok := AllowedPolicyStrings[k]
-		if !ok {
-			return fmt.Errorf("unsupported policy string: %q", in)
+
+	p.Category = val.Category
+	p.CategoryInstance = val.CategoryInstance
+	var attr PolicyAttribute
+	for _, a := range val.Attributes {
+		switch a.Type {
+		case NetworkFirewallAttrType:
+			attr = NewNetworkFirewallAttr()
+		case NetworkBandwidthAttrType:
+			attr = NewNetworkBandwidthAttr("")
+		case NetworkCOSAttrType:
+			attr = NewNetworkCOSAttr(0)
+		case NetworkVendorSpecificAttrType:
+			attr = NewNetworkVendorSpecificAttr("")
+		default:
+			return fmt.Errorf("invalid policy attribute type %q", a.Type)
 		}
-		pm[pt] = v
+		aBytes, err := json.Marshal(a)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal(aBytes, &attr); err != nil {
+			return err
+		}
+		p.Attributes = append(p.Attributes, attr)
 	}
 	return nil
 }

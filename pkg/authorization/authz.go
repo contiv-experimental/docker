@@ -75,7 +75,7 @@ func (ctx *Ctx) AuthZRequest(w http.ResponseWriter, r *http.Request) error {
 		RequestURI:      ctx.requestURI,
 		RequestBody:     body,
 		RequestHeaders:  headers(r.Header),
-		Policies:        make(map[container.PolicyType]string),
+		Policies:        []container.Policy{},
 	}
 
 	for _, plugin := range ctx.plugins {
@@ -90,12 +90,8 @@ func (ctx *Ctx) AuthZRequest(w http.ResponseWriter, r *http.Request) error {
 			return fmt.Errorf("authorization denied by plugin %s: %s", plugin.Name(), authRes.Msg)
 		} else {
 			// store the policies returned by authz plugin.
-			for k, v := range authRes.Policies {
-				if !k.IsValidType() {
-					logrus.Infof("authz plugin returned an invalid policy type: %d", k)
-					continue
-				}
-				ctx.authReq.Policies[k] = v
+			for _, p := range authRes.Policies {
+				ctx.authReq.Policies = append(ctx.authReq.Policies, p)
 			}
 		}
 	}
@@ -131,7 +127,7 @@ func (ctx *Ctx) AuthZResponse(rm ResponseModifier, r *http.Request) error {
 }
 
 // Policies returns the policies associated with the authz context for a request
-func (ctx *Ctx) Policies() map[container.PolicyType]string {
+func (ctx *Ctx) Policies() []container.Policy {
 	return ctx.authReq.Policies
 }
 
