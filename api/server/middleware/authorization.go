@@ -26,8 +26,9 @@ func NewAuthorizationMiddleware(plugins []authorization.Plugin) Middleware {
 			}
 
 			rw := authorization.NewResponseModifier(w)
+			newCtx := context.WithValue(ctx, "policies", authCtx.Policies())
 
-			if err := handler(ctx, rw, r, vars); err != nil {
+			if err := handler(newCtx, rw, r, vars); err != nil {
 				logrus.Errorf("Handler for %s %s returned error: %s", r.Method, r.RequestURI, err)
 				return err
 			}

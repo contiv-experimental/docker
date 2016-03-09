@@ -357,6 +357,14 @@ func (s *containerRouter) postContainersCreate(ctx context.Context, w http.Respo
 	version := httputils.VersionFromContext(ctx)
 	adjustCPUShares := version.LessThan("1.19")
 
+	// set container policies associated by authz plugin(s)
+	policies, ok := ctx.Value("policies").([]container.Policy)
+	if !ok {
+		logrus.Debugf("incorrect type for policy map %T, expected %T", ctx.Value("policies"), config.Policies)
+		policies = []container.Policy{}
+	}
+	config.Policies = policies
+
 	ccr, err := s.backend.ContainerCreate(types.ContainerCreateConfig{
 		Name:             name,
 		Config:           config,
