@@ -398,6 +398,22 @@ func (container *Container) BuildCreateEndpointOptions(n libnetwork.Network, epC
 		libnetwork.CreateOptionPortMapping(pbList),
 		libnetwork.CreateOptionExposedPorts(exposeList))
 
+	// FIXME: hack to test policies
+	fwAttr := containertypes.NewNetworkFirewallAttr()
+	fwAttr.AddRule("in", "deny", "tcp", "8000", "2", "")
+
+	container.Config.Policies = []containertypes.Policy{
+		{
+			Category:   "net",
+			Attributes: []containertypes.PolicyAttribute{fwAttr},
+		},
+	}
+	// Add policies if required
+	if len(container.Config.Policies) > 0 {
+		createOptions = append(createOptions,
+			libnetwork.CreateOptionPolicies(container.Config.Policies))
+	}
+
 	return createOptions, nil
 }
 

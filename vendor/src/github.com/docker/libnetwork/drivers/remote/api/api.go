@@ -7,6 +7,7 @@ package api
 import (
 	"net"
 
+	"github.com/docker/engine-api/types/container"
 	"github.com/docker/libnetwork/discoverapi"
 	"github.com/docker/libnetwork/driverapi"
 )
@@ -64,6 +65,8 @@ type CreateEndpointRequest struct {
 	EndpointID string
 	Interface  *EndpointInterface
 	Options    map[string]interface{}
+	// List of policy values
+	Policies []container.Policy
 }
 
 // EndpointInterface represents an interface endpoint.

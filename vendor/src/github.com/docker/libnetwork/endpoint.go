@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/engine-api/types/container"
 	"github.com/docker/libnetwork/datastore"
 	"github.com/docker/libnetwork/ipamapi"
 	"github.com/docker/libnetwork/netlabel"
@@ -69,6 +70,7 @@ type endpoint struct {
 	myAliases         []string
 	dbIndex           uint64
 	dbExists          bool
+	policies          []container.Policy
 	sync.Mutex
 }
 
@@ -810,6 +812,13 @@ func CreateOptionAlias(name string, alias string) EndpointOption {
 func CreateOptionMyAlias(alias string) EndpointOption {
 	return func(ep *endpoint) {
 		ep.myAliases = append(ep.myAliases, alias)
+	}
+}
+
+// CreateOptionPolicies function returns an option setter for setting endpoint's policies
+func CreateOptionPolicies(policies []container.Policy) EndpointOption {
+	return func(ep *endpoint) {
+		ep.policies = policies
 	}
 }
 
