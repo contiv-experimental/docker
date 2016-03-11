@@ -20,6 +20,7 @@ import (
 
 	"github.com/Microsoft/hcsshim"
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/engine-api/types/container"
 	"github.com/docker/libnetwork/datastore"
 	"github.com/docker/libnetwork/discoverapi"
 	"github.com/docker/libnetwork/driverapi"
@@ -276,7 +277,7 @@ func convertPortBindings(portBindings []types.PortBinding) ([]json.RawMessage, e
 	return pbs, nil
 }
 
-func (d *driver) CreateEndpoint(nid, eid string, ifInfo driverapi.InterfaceInfo, epOptions map[string]interface{}) error {
+func (d *driver) CreateEndpoint(nid, eid string, ifInfo driverapi.InterfaceInfo, epOptions map[string]interface{}, policies []container.Policy) error {
 	n, err := d.getNetwork(nid)
 	if err != nil {
 		return err

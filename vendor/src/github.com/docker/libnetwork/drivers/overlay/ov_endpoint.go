@@ -5,6 +5,7 @@ import (
 	"net"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/engine-api/types/container"
 	"github.com/docker/libnetwork/driverapi"
 	"github.com/docker/libnetwork/netutils"
 	"github.com/vishvananda/netlink"
@@ -39,7 +40,7 @@ func (n *network) deleteEndpoint(eid string) {
 }
 
 func (d *driver) CreateEndpoint(nid, eid string, ifInfo driverapi.InterfaceInfo,
-	epOptions map[string]interface{}) error {
+	epOptions map[string]interface{}, policies []container.Policy) error {
 	var err error
 
 	if err = validateID(nid, eid); err != nil {

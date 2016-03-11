@@ -681,7 +681,7 @@ func (n *network) addEndpoint(ep *endpoint) error {
 		return fmt.Errorf("failed to add endpoint: %v", err)
 	}
 
-	err = d.CreateEndpoint(n.id, ep.id, ep.Interface(), ep.generic)
+	err = d.CreateEndpoint(n.id, ep.id, ep.Interface(), ep.generic, ep.policies)
 	if err != nil {
 		return types.InternalErrorf("failed to create endpoint %s on network %s: %v",
 			ep.Name(), n.Name(), err)

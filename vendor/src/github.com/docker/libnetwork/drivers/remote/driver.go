@@ -6,6 +6,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/plugins"
+	"github.com/docker/engine-api/types/container"
 	"github.com/docker/libnetwork/datastore"
 	"github.com/docker/libnetwork/discoverapi"
 	"github.com/docker/libnetwork/driverapi"
@@ -98,7 +99,7 @@ func (d *driver) DeleteNetwork(nid string) error {
 	return d.call("DeleteNetwork", delete, &api.DeleteNetworkResponse{})
 }
 
-func (d *driver) CreateEndpoint(nid, eid string, ifInfo driverapi.InterfaceInfo, epOptions map[string]interface{}) error {
+func (d *driver) CreateEndpoint(nid, eid string, ifInfo driverapi.InterfaceInfo, epOptions map[string]interface{}, policies []container.Policy) error {
 	if ifInfo == nil {
 		return fmt.Errorf("must not be called with nil InterfaceInfo")
 	}
@@ -119,6 +120,7 @@ func (d *driver) CreateEndpoint(nid, eid string, ifInfo driverapi.InterfaceInfo,
 		EndpointID: eid,
 		Interface:  reqIface,
 		Options:    epOptions,
+		Policies:   policies,
 	}
 	var res api.CreateEndpointResponse
 	if err := d.call("CreateEndpoint", create, &res); err != nil {
